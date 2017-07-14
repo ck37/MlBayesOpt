@@ -51,18 +51,23 @@ rf_opt <- function(train_data,
   dtrain <- train_data
   dtest <- test_data
 
-  if (class(train_label) != "factor"){
+  if (class(train_label) != "factor") {
     trainlabel <- as.factor(train_label)
-  } else{
+  } else {
     trainlabel <- train_label}
 
-  if (class(test_label) != "factor"){
+  if (class(test_label) != "factor") {
     testlabel <- as.factor(train_label)
-  } else{
+  } else {
     testlabel <- test_label}
 
+  # Append Y to dtrain to try to avoid namespace error.
+  dtrain = cbind(`_Y` = trainlabel, dtrain)
+
   rf_holdout <- function(num_trees_opt, mtry_opt) {
-    model <- ranger(trainlabel ~., dtrain, num.trees = num_trees_opt, mtry = mtry_opt)
+    # Ranger does not seem to support Y being a vector outside of the dataframe,
+    # so we explicitly add to dataframe with a unique name to avoid conflicts.
+    model <- ranger(`_Y` ~., dtrain, num.trees = num_trees_opt, mtry = mtry_opt)
     t.pred <- predict(model, dat = dtest)
     Pred <- sum(diag(table(testlabel, t.pred$predictions)))/nrow(dtest)
     list(Score = Pred, Pred = Pred)
